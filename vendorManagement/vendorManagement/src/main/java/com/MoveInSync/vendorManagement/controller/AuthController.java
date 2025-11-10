@@ -101,6 +101,7 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of(
                 "token", token,
+                "email", user.getEmail(),
                 "vendorId", vendor.getVendorId(),
                 "vendorLevel", vendor.getLevel(),
                 "role", role.getName(),
@@ -116,7 +117,8 @@ public class AuthController {
         String vendorLevel = (String) request.getAttribute("vendorLevel");
         List<String> permissions = (List<String>) request.getAttribute("permissions");
 
-        return ResponseEntity.ok(new UserDto(role, vendorId, vendorLevel, permissions));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(new UserDto(role, vendorId, vendorLevel, permissions, email));
     }
     @PostMapping("/assign-role/{userId}")
     @RequiresPermission("CAN_MANAGE_PERMISSIONS")
@@ -141,6 +143,8 @@ public class AuthController {
         return ResponseEntity.ok("✅ Role " + role.getName() +
                 " assigned to vendor " + vendor.getName());
     }
+
+    
     @PutMapping("/change-password")
     public ResponseEntity<String> changePassword(
             HttpServletRequest request,

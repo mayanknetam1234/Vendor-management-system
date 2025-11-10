@@ -8,6 +8,8 @@ import com.MoveInSync.vendorManagement.enumClass.VendorStatus;
 import com.MoveInSync.vendorManagement.repository.RoleRepository;
 import com.MoveInSync.vendorManagement.repository.UserRepository;
 import com.MoveInSync.vendorManagement.repository.VendorRepository;
+import com.MoveInSync.vendorManagement.repository.PermissionRepository;
+import com.MoveInSync.vendorManagement.entity.Permission;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -15,7 +17,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class AdminSeeder implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PermissionRepository permissionRepository;
 
     @Override
     public void run(String... args) {
@@ -67,6 +72,14 @@ public class AdminSeeder implements CommandLineRunner {
             System.out.println("✅ Super Admin user created!");
         } else {
             System.out.println("ℹ️ Super Admin user already exists.");
+            // 🔄 Sync SUPER vendor role permissions with all current permissions
+            Role role = superVendor.getRole();
+            if (role != null) {
+                Set<Permission> allPerms = new HashSet<>(permissionRepository.findAll());
+                role.setPermissions(allPerms);
+                roleRepository.save(role);
+                System.out.println("🔁 Synced Super Vendor role with latest permissions (" + allPerms.size() + ")");
+            }
         }
     }
 }

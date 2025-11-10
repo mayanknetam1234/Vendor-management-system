@@ -15,6 +15,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -45,15 +47,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
 
-                Claims claims = jwtService.extractAllClaims(jwt);
-                List<String> permissions = (List<String>) claims.get("permissions");
-                String role = (String) claims.get("role");
+                // Build attributes from the authenticated user instead of JWT claims
+                CustomUserDetails cud = (CustomUserDetails) userDetails;
+                var user = cud.getUser();
+                var vendor = user.getVendor();
+                var roleEntity = vendor != null ? vendor.getRole() : null;
+                Set<com.MoveInSync.vendorManagement.entity.Permission> perms =
+                        roleEntity != null ? roleEntity.getPermissions() : java.util.Set.of();
+                List<String> permissions = perms.stream().map(com.MoveInSync.vendorManagement.entity.Permission::getName).collect(Collectors.toList());
+                String role = roleEntity != null ? roleEntity.getName() : null;
 
-                // ✅ Make claims accessible to controllers
+                // ✅ Make attributes accessible to controllers
                 request.setAttribute("permissions", permissions);
                 request.setAttribute("role", role);
-                request.setAttribute("vendorId", claims.get("vendorId"));
-                request.setAttribute("vendorLevel", claims.get("vendorLevel"));
+                request.setAttribute("vendorId", vendor != null ? vendor.getVendorId() : null);
+                request.setAttribute("vendorLevel", vendor != null ? vendor.getLevel() : null);
 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());

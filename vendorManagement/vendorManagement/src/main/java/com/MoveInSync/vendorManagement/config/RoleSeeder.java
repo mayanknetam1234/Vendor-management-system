@@ -30,7 +30,8 @@ public class RoleSeeder implements CommandLineRunner {
                 "CAN_ADD_DRIVER",
                 "CAN_UPLOAD_DOC",
                 "CAN_VERIFY_DOC",
-                "CAN_MANAGE_PERMISSIONS"
+                "CAN_MANAGE_PERMISSIONS",
+                "CAN_VIEW_VENDOR"
         ));
 
         rolePermissionsMap.put("REGIONAL_VENDOR_ROLE", List.of(

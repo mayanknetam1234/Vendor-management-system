@@ -4,5 +4,7 @@ public enum DocumentStatus {
     ACTIVE,
     EXPIRED,
     DELETED,
-    PENDING
+    PENDING,
+    VERIFIED,
+    REJECTED
 }

@@ -1,5 +1,13 @@
 package com.MoveInSync.vendorManagement.controller;
 
+import com.MoveInSync.vendorManagement.authorization.RequiresPermission;
+import com.MoveInSync.vendorManagement.dto.HierarchyNode;
+import com.MoveInSync.vendorManagement.dto.HierarchyStatsResponse;
+import com.MoveInSync.vendorManagement.service.interfaces.HierarchyService;
+import com.MoveInSync.vendorManagement.repository.VendorRepository;
+import com.MoveInSync.vendorManagement.entity.Vendor;
+import com.MoveInSync.vendorManagement.util.VendorHierarchyHelper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -7,28 +15,47 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/hierarchy")
 public class HierarchyController {
 
+    private final HierarchyService hierarchyService;
+    private final VendorRepository vendorRepository;
+    private final VendorHierarchyHelper hierarchyHelper;
+
+    public HierarchyController(HierarchyService hierarchyService,
+                               VendorRepository vendorRepository,
+                               VendorHierarchyHelper hierarchyHelper) {
+        this.hierarchyService = hierarchyService;
+        this.vendorRepository = vendorRepository;
+        this.hierarchyHelper = hierarchyHelper;
+    }
+
+    // ✅ 1️⃣ Get full vendor hierarchy tree (vendor → driver → vehicle)
     @GetMapping("/{vendorId}")
-    public ResponseEntity<String> fullTree(@PathVariable Long vendorId) {
-        return ResponseEntity.ok("hierarchy full ok vendor=" + vendorId);
+    @RequiresPermission("CAN_VIEW_VENDOR")
+    public ResponseEntity<HierarchyNode> getHierarchy(HttpServletRequest request, @PathVariable Long vendorId) {
+        Long actingVendorId = (Long) request.getAttribute("vendorId");
+        Vendor acting = vendorRepository.findById(actingVendorId)
+                .orElseThrow(() -> new RuntimeException("Acting vendor not found"));
+        Vendor target = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new RuntimeException("Target vendor not found"));
+        if (!target.getVendorId().equals(actingVendorId) &&
+                !hierarchyHelper.isAncestor(acting, target)) {
+            throw new RuntimeException("Access denied — can only view your own subtree");
+        }
+        return ResponseEntity.ok(hierarchyService.getVendorHierarchy(vendorId));
     }
 
-    @GetMapping("/subtree/{vendorId}")
-    public ResponseEntity<String> subTree(@PathVariable Long vendorId) {
-        return ResponseEntity.ok("hierarchy subtree ok vendor=" + vendorId);
-    }
-
-    @GetMapping("/drivers/{vendorId}")
-    public ResponseEntity<String> drivers(@PathVariable Long vendorId) {
-        return ResponseEntity.ok("hierarchy drivers ok vendor=" + vendorId);
-    }
-
-    @GetMapping("/vehicles/{vendorId}")
-    public ResponseEntity<String> vehicles(@PathVariable Long vendorId) {
-        return ResponseEntity.ok("hierarchy vehicles ok vendor=" + vendorId);
-    }
-
+    // ✅ 2️⃣ Get hierarchy statistics
     @GetMapping("/stats/{vendorId}")
-    public ResponseEntity<String> stats(@PathVariable Long vendorId) {
-        return ResponseEntity.ok("hierarchy stats ok vendor=" + vendorId);
+    @RequiresPermission("CAN_VIEW_VENDOR")
+    public ResponseEntity<HierarchyStatsResponse> getStats(HttpServletRequest request, @PathVariable Long vendorId) {
+        Long actingVendorId = (Long) request.getAttribute("vendorId");
+        Vendor acting = vendorRepository.findById(actingVendorId)
+                .orElseThrow(() -> new RuntimeException("Acting vendor not found"));
+        Vendor target = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new RuntimeException("Target vendor not found"));
+        if (!target.getVendorId().equals(actingVendorId) &&
+                !hierarchyHelper.isAncestor(acting, target)) {
+            throw new RuntimeException("Access denied — can only view your own subtree");
+        }
+        return ResponseEntity.ok(hierarchyService.getHierarchyStats(vendorId));
     }
 }

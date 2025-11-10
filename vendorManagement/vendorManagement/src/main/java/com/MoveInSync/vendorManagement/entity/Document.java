@@ -18,17 +18,21 @@ public class Document {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long documentId;
 
-    @ManyToOne
-    @JoinColumn(name = "vendor_id")
-    private Vendor vendor;
+    private String fileName;
 
     @ManyToOne
-    @JoinColumn(name = "driver_id")
-    private Driver driver;
+    @JoinColumn(name = "vendor_id", nullable = false)
+    private Vendor vendor;           // ✅ always required
+
 
     @ManyToOne
-    @JoinColumn(name = "vehicle_id")
+    @JoinColumn(name = "driver_id", nullable = true)
+    private Driver driver;           // optional
+
+    @ManyToOne
+    @JoinColumn(name = "vehicle_id", nullable = true)
     private Vehicle vehicle;
+
 
     @Enumerated(EnumType.STRING)
     private DocumentType type; // LICENSE, RC, INSURANCE

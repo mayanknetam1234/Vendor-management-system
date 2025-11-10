@@ -1,5 +1,10 @@
 package com.MoveInSync.vendorManagement.controller;
 
+import com.MoveInSync.vendorManagement.authorization.RequiresPermission;
+import com.MoveInSync.vendorManagement.dto.DriverRequestDto;
+import com.MoveInSync.vendorManagement.dto.DriverResponseDto;
+import com.MoveInSync.vendorManagement.service.interfaces.DriverService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -7,43 +12,64 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/drivers")
 public class DriverController {
 
+    private final DriverService driverService;
+
+    public DriverController(DriverService driverService) {
+        this.driverService = driverService;
+    }
+
+    // ✅ 1️⃣ Add driver (auto-links to current vendor)
     @PostMapping("/add")
-    public ResponseEntity<String> addDriver() {
-        return ResponseEntity.ok("driver add ok");
+    @RequiresPermission("CAN_ADD_DRIVER")
+    public ResponseEntity<DriverResponseDto> addDriver(HttpServletRequest request,
+                                                       @RequestBody DriverRequestDto driverRequest) {
+        Long vendorId = (Long) request.getAttribute("vendorId");
+        DriverResponseDto response = driverService.addDriver(vendorId, driverRequest);
+        return ResponseEntity.ok(response);
     }
 
+    // ✅ 2️⃣ Get all drivers under current vendor
     @GetMapping("/list")
-    public ResponseEntity<String> listDrivers() {
-        return ResponseEntity.ok("driver list ok");
+    @RequiresPermission("CAN_VIEW_VENDOR")
+    public ResponseEntity<java.util.List<DriverResponseDto>> listDrivers(HttpServletRequest request) {
+        Long vendorId = (Long) request.getAttribute("vendorId");
+        return ResponseEntity.ok(driverService.listDrivers(vendorId));
     }
 
+    // ✅ 3️⃣ Fetch driver details
     @GetMapping("/{id}")
-    public ResponseEntity<String> getDriver(@PathVariable Long id) {
-        return ResponseEntity.ok("driver get ok: " + id);
+    @RequiresPermission("CAN_VIEW_VENDOR")
+    public ResponseEntity<DriverResponseDto> getDriver(HttpServletRequest request, @PathVariable Long id) {
+        Long vendorId = (Long) request.getAttribute("vendorId");
+        return ResponseEntity.ok(driverService.getDriver(vendorId, id));
     }
 
+    // ✅ 4️⃣ Update driver details
     @PutMapping("/{id}/update")
-    public ResponseEntity<String> updateDriver(@PathVariable Long id) {
-        return ResponseEntity.ok("driver update ok: " + id);
+    @RequiresPermission("CAN_ADD_DRIVER")
+    public ResponseEntity<DriverResponseDto> updateDriver(HttpServletRequest request,
+                                                          @PathVariable Long id,
+                                                          @RequestBody DriverRequestDto driverRequest) {
+        Long vendorId = (Long) request.getAttribute("vendorId");
+        return ResponseEntity.ok(driverService.updateDriver(vendorId, id, driverRequest));
     }
 
-    @PutMapping("/{id}/approve")
-    public ResponseEntity<String> approveDriver(@PathVariable Long id) {
-        return ResponseEntity.ok("driver approve ok: " + id);
-    }
-
-    @PutMapping("/{id}/reject")
-    public ResponseEntity<String> rejectDriver(@PathVariable Long id) {
-        return ResponseEntity.ok("driver reject ok: " + id);
-    }
-
+    // ✅ 5️⃣ Change driver status (activate / deactivate / block)
     @PutMapping("/{id}/status/{status}")
-    public ResponseEntity<String> changeStatus(@PathVariable Long id, @PathVariable String status) {
-        return ResponseEntity.ok("driver status change ok: " + id + " -> " + status);
+    @RequiresPermission("CAN_ADD_DRIVER")
+    public ResponseEntity<DriverResponseDto> changeStatus(HttpServletRequest request,
+                                                          @PathVariable Long id,
+                                                          @PathVariable String status) {
+        Long vendorId = (Long) request.getAttribute("vendorId");
+        return ResponseEntity.ok(driverService.changeStatus(vendorId, id, status));
     }
 
+    // ✅ 6️⃣ Soft delete driver
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteDriver(@PathVariable Long id) {
-        return ResponseEntity.ok("driver delete ok: " + id);
+    @RequiresPermission("CAN_ADD_DRIVER")
+    public ResponseEntity<String> deleteDriver(HttpServletRequest request, @PathVariable Long id) {
+        Long vendorId = (Long) request.getAttribute("vendorId");
+        driverService.deleteDriver(vendorId, id);
+        return ResponseEntity.ok("🗑 Driver soft-deleted successfully!");
     }
 }

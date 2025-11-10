@@ -23,6 +23,7 @@ public class Vehicle {
 
     private String registrationNo;
     private String model;
+    private String type; // e.g., Sedan, SUV, Truck
     private String status = "active"; // active, maintenance, blocked
     private LocalDateTime createdAt = LocalDateTime.now();
 

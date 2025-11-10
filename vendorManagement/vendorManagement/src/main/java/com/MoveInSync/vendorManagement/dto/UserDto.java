@@ -14,4 +14,5 @@ public class UserDto {
     private Long vendorId;
     private String vendorLevel;
     private List<String> permissions;
+    private String email;
 }

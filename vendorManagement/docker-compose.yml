@@ -11,8 +11,13 @@ services:
       POSTGRES_DB: vendorManagement
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-volumes:
-  postgres_data:
 
+      TZ: Asia/Kolkata
+
+      PGTZ: Asia/Kolkata
+
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+
+#volumes:
+#  postgres_data:
