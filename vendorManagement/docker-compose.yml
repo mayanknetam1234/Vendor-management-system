@@ -1,23 +1,18 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15
-    container_name: vendorManagement
+  mysql:
+    image: mysql:8
+    container_name: vendorManagement-mysql
     restart: always
-    ports:
-      - "5432:5432"
     environment:
-      POSTGRES_DB: vendorManagement
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-
+      MYSQL_DATABASE: vendorManagement
+      MYSQL_ROOT_PASSWORD: password
       TZ: Asia/Kolkata
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
 
-      PGTZ: Asia/Kolkata
-
-#    volumes:
-#      - postgres_data:/var/lib/postgresql/data
-
-#volumes:
-#  postgres_data:
+volumes:
+  mysql_data:
