@@ -1,0 +1,22 @@
+# Ignore environment files anywhere in the repo
+ # Common dotenv patterns
+ .env
+ .env.*
+ *.env
+ *.env.*
+ .envrc
+ .direnv/
+
+ # Env directories
+ env/
+ **/env/
+
+ # Properties-style env files
+ env.properties
+ **/env.properties
+
+ # Keep example/template env files tracked
+ !.env.example
+ !.env*.example
+ !.env.template
+ !.env.sample
