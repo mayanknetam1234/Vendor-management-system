@@ -83,7 +83,7 @@ public class VendorController {
 
     // ✅ 2️⃣ Fetch a single vendor
     @GetMapping("/{id}")
-    @RequiresPermission("CAN_VIEW_VENDOR")
+//    @RequiresPermission("CAN_VIEW_VENDOR")
     public ResponseEntity<VendorResponseDto> getVendor(@PathVariable Long id) {
         Vendor vendor = vendorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
@@ -106,7 +106,7 @@ public class VendorController {
 
     // ✅ 3️⃣ Get all vendors accessible to current user
     @GetMapping("/list")
-    @RequiresPermission("CAN_VIEW_VENDOR")
+//    @RequiresPermission("CAN_VIEW_VENDOR")
     public ResponseEntity<List<VendorResponseDto>> listVendor(HttpServletRequest request) {
         Long vendorId = (Long) request.getAttribute("vendorId");
         Vendor currentVendor = vendorRepository.findById(vendorId)

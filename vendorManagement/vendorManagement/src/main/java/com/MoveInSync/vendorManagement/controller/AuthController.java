@@ -61,11 +61,17 @@ public class AuthController {
         newUser.setStatus(UserStatus.ACTIVE);
         User saved = userRepository.save(newUser);
 
-        // Send welcome/confirmation email to the newly created user
+        // Send welcome/confirmation email to the newly created user (HTML formatted)
+        String emailBody = "<p>Hello,</p>"
+                + "<p>Your account has been created successfully.</p>"
+                + "<p><strong>Email:</strong> " + saved.getEmail() + "<br/>"
+                + "<strong>Password:</strong> " + request.getPassword() + "</p>"
+                + "<p>Regards,<br/>Vendor Management</p>";
+
         mailUtil.sendMail(
                 saved.getEmail(),
                 "Welcome to Vendor Management",
-                "Hello, your account has been created successfully. Your password is: " + request.getPassword()
+                emailBody
         );
 
         SignupResponseDto resp = new SignupResponseDto(

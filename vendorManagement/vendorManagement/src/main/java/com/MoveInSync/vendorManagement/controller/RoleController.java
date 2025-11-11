@@ -30,7 +30,7 @@ public class RoleController {
 
     // ✅ 2️⃣ Get all roles
     @GetMapping("/list")
-    @RequiresPermission("CAN_VIEW_VENDOR")
+//    @RequiresPermission("CAN_VIEW_VENDOR")//
     public ResponseEntity<List<RoleResponseDto>> getAllRoles() {
         List<RoleResponseDto> roles = roleService.getAllRoles().stream()
                 .map(this::mapToResponse)
@@ -40,7 +40,7 @@ public class RoleController {
 
     // ✅ 3️⃣ Get a single role by ID (with permissions)
     @GetMapping("/{roleId}")
-    @RequiresPermission("CAN_VIEW_VENDOR")
+//    @RequiresPermission("CAN_VIEW_VENDOR")
     public ResponseEntity<RoleResponseDto> getRole(@PathVariable Long roleId) {
         Role role = roleService.getRoleById(roleId);
         return ResponseEntity.ok(mapToResponse(role));
