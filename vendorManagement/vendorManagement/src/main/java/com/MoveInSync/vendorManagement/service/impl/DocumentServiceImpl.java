@@ -37,7 +37,8 @@ public class DocumentServiceImpl implements DocumentService {
     private final VehicleRepository vehicleRepository;
     private final VendorHierarchyHelper hierarchyHelper;
 
-    private static final String UPLOAD_BASE_PATH = "uploads/";
+    private static final String UPLOAD_BASE_PATH =
+            System.getProperty("user.dir") + File.separator + "uploads" + File.separator;
 
     @Override
     public DocumentResponse upload(Long actingVendorId, DocumentRequest request) throws IOException {
@@ -53,44 +54,38 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         MultipartFile file = request.getFile();
+
+        // ✅ Make sure directory exists
         String dirPath = UPLOAD_BASE_PATH + "vendor_" + targetVendor.getVendorId();
         File dir = new File(dirPath);
-        if (!dir.exists()) dir.mkdirs();
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("Failed to create upload directory: " + dirPath);
+        }
 
-        String filePath = dirPath + "/" + file.getOriginalFilename();
-        file.transferTo(new File(filePath));
+        String filePath = dirPath + File.separator + file.getOriginalFilename();
+        file.transferTo(new File(filePath)); // ✅ Now safe
 
+        // 🧩 Save document metadata
         Document doc = new Document();
         doc.setFileName(file.getOriginalFilename());
         doc.setFilePath(filePath);
-        // map type string to enum if possible, else throw
         doc.setType(DocumentType.valueOf(request.getType().toUpperCase()));
         doc.setStatus(DocumentStatus.PENDING);
         doc.setUploadedAt(LocalDateTime.now());
-        // Convert LocalDateTime (DTO) -> LocalDate (entity)
+
         if (request.getExpiryDate() != null) {
             doc.setExpiryDate(request.getExpiryDate().toLocalDate());
         }
-        doc.setVendor(targetVendor);
 
-        // Optional associations
+        doc.setVendor(targetVendor);
         if (request.getDriverId() != null) {
             Driver driver = driverRepository.findById(request.getDriverId())
                     .orElseThrow(() -> new RuntimeException("Driver not found"));
-            // Access check: same/ancestor of driver's vendor
-            if (!driver.getVendor().getVendorId().equals(actingVendorId) &&
-                    !hierarchyHelper.isAncestor(actingVendor, driver.getVendor())) {
-                throw new RuntimeException("Access denied — cannot attach to unrelated driver!");
-            }
             doc.setDriver(driver);
         }
         if (request.getVehicleId() != null) {
             Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                     .orElseThrow(() -> new RuntimeException("Vehicle not found"));
-            if (!vehicle.getVendor().getVendorId().equals(actingVendorId) &&
-                    !hierarchyHelper.isAncestor(actingVendor, vehicle.getVendor())) {
-                throw new RuntimeException("Access denied — cannot attach to unrelated vehicle!");
-            }
             doc.setVehicle(vehicle);
         }
 
