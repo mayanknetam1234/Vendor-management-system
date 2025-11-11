@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -117,17 +118,32 @@ public class DocumentServiceImpl implements DocumentService {
         Vendor actingVendor = vendorRepository.findById(actingVendorId)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
 
+        // 🛡️ Access check
         if (!targetVendor.getVendorId().equals(actingVendor.getVendorId()) &&
                 !hierarchyHelper.isAncestor(actingVendor, targetVendor)) {
             throw new RuntimeException("Access denied — cannot view documents!");
         }
 
-        return documentRepository.findByVendor(targetVendor)
-                .stream()
+        // ✅ Get all vendors in this vendor’s hierarchy (recursive)
+        List<Vendor> allVendorsInTree = getAllChildVendors(targetVendor);
+        allVendorsInTree.add(targetVendor); // include itself
+
+        // ✅ Fetch all documents for every vendor in the tree
+        return allVendorsInTree.stream()
+                .flatMap(v -> documentRepository.findByVendor(v).stream())
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+    private List<Vendor> getAllChildVendors(Vendor vendor) {
+        List<Vendor> directChildren = vendorRepository.findByParentVendor(vendor);
+        List<Vendor> allChildren = new ArrayList<>(directChildren);
 
+        for (Vendor child : directChildren) {
+            allChildren.addAll(getAllChildVendors(child)); // recursion
+        }
+
+        return allChildren;
+    }
     @Override
     public DocumentResponse verifyDocument(Long actingVendorId, Long documentId) {
         Document doc = documentRepository.findById(documentId)
