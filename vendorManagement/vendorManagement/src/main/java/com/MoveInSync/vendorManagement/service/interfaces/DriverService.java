@@ -12,4 +12,6 @@ public interface DriverService {
     DriverResponseDto updateDriver(Long vendorId, Long driverId, DriverRequestDto request);
     DriverResponseDto changeStatus(Long vendorId, Long driverId, String status);
     void deleteDriver(Long vendorId, Long driverId);
+
+    List<DriverResponseDto> listAllDriversInTree(Long vendorId);
 }

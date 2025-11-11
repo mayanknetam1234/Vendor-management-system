@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/drivers")
 @CrossOrigin
@@ -72,5 +74,12 @@ public class DriverController {
         Long vendorId = (Long) request.getAttribute("vendorId");
         driverService.deleteDriver(vendorId, id);
         return ResponseEntity.ok("🗑 Driver soft-deleted successfully!");
+    }
+
+    @GetMapping("/tree")
+    @RequiresPermission("CAN_VIEW_VENDOR")
+    public ResponseEntity<List<DriverResponseDto>> listAllDriversInTree(HttpServletRequest request) {
+        Long vendorId = (Long) request.getAttribute("vendorId");
+        return ResponseEntity.ok(driverService.listAllDriversInTree(vendorId));
     }
 }

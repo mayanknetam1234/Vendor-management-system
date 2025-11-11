@@ -161,6 +161,30 @@ public class DriverServiceImpl implements DriverService {
         }
         return result;
     }
+    @Override
+    public List<DriverResponseDto> listAllDriversInTree(Long vendorId) {
+        // ✅ Fetch the root vendor
+        Vendor rootVendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new RuntimeException("Vendor not found"));
+
+        // ✅ Get all vendors under this vendor (recursively)
+        List<Vendor> allVendorsInTree = getAllChildVendors(rootVendor);
+        allVendorsInTree.add(rootVendor); // include the root vendor itself
+
+        // ✅ Collect drivers across all vendors in the tree
+        return allVendorsInTree.stream()
+                .flatMap(vendor -> driverRepository.findByVendor(vendor).stream())
+                .map(driver -> {
+                    // find assigned vehicle name if any
+                    String assignedVehicleName = (driver.getAssignedVehicle() != null)
+                            ? driver.getAssignedVehicle().getRegistrationNo()
+                            : null;
+
+                    // reuse consistent mapper method
+                    return mapToResponse(driver, assignedVehicleName);
+                })
+                .collect(Collectors.toList());
+    }
 
     private DriverResponseDto mapToResponse(Driver driver, String assignedVehicleName) {
         return new DriverResponseDto(
