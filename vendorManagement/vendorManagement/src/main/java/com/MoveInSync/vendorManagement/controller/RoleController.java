@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+
 @RequestMapping("/api/roles")
 @RequiredArgsConstructor
 public class RoleController {
@@ -57,6 +58,7 @@ public class RoleController {
     @PutMapping("/{roleId}/permissions")
     @RequiresPermission("CAN_MANAGE_PERMISSIONS")
     public ResponseEntity<RoleResponseDto> updateRolePermissions(@PathVariable Long roleId, @RequestBody List<Long> permissionIds) {
+        System.out.println("hiii");
         Role updated = roleService.updateRolePermissions(roleId, permissionIds);
         return ResponseEntity.ok(mapToResponse(updated));
     }

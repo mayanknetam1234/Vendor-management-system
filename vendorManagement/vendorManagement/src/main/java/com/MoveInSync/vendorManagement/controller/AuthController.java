@@ -15,6 +15,7 @@ import com.MoveInSync.vendorManagement.repository.RoleRepository;
 import com.MoveInSync.vendorManagement.repository.UserRepository;
 import com.MoveInSync.vendorManagement.repository.VendorRepository;
 import com.MoveInSync.vendorManagement.security.JwtService;
+import com.MoveInSync.vendorManagement.util.MailUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthenticationManager authenticationManager;
@@ -40,6 +42,7 @@ public class AuthController {
     private final VendorRepository vendorRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final MailUtil mailUtil;
 
     @PostMapping("/signup")
     @RequiresPermission("CAN_CREATE_VENDOR")
@@ -58,6 +61,13 @@ public class AuthController {
         newUser.setStatus(UserStatus.ACTIVE);
         User saved = userRepository.save(newUser);
 
+        // Send welcome/confirmation email to the newly created user
+        mailUtil.sendMail(
+                saved.getEmail(),
+                "Welcome to Vendor Management",
+                "Hello, your account has been created successfully. Your password is: " + request.getPassword()
+        );
+
         SignupResponseDto resp = new SignupResponseDto(
                 saved.getUserId(),
                 saved.getEmail(),
@@ -65,6 +75,7 @@ public class AuthController {
                 saved.getStatus(),
                 saved.getCreatedAt()
         );
+
 
         return ResponseEntity.ok(resp);
 
@@ -144,7 +155,7 @@ public class AuthController {
                 " assigned to vendor " + vendor.getName());
     }
 
-    
+
     @PutMapping("/change-password")
     public ResponseEntity<String> changePassword(
             HttpServletRequest request,

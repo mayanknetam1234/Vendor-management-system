@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/vendors")
+@CrossOrigin
 @RequiredArgsConstructor
 public class VendorController {
 

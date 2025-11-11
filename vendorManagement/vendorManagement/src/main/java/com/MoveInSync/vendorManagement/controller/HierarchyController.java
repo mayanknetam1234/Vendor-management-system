@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/hierarchy")
+@CrossOrigin
 public class HierarchyController {
 
     private final HierarchyService hierarchyService;

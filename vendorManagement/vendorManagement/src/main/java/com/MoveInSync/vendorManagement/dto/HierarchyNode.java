@@ -13,6 +13,7 @@ public class HierarchyNode {
     private Long vendorId;
     private String vendorName;
     private String status;
+    private List<UserInfo> users;
     private List<DriverInfo> drivers;
     private List<VehicleInfo> vehicles;
     private List<HierarchyNode> children;

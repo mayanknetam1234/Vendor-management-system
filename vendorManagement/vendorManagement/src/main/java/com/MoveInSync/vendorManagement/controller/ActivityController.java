@@ -15,12 +15,13 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/activity")
 @RequiredArgsConstructor
+@CrossOrigin
 public class ActivityController {
 
     private final ActivityLogRepository activityLogRepository;
 
     @GetMapping
-    @RequiresPermission("CAN_VIEW_VENDOR")
+    @RequiresPermission("CAN_VIEW_ACTIVITY")
     public ResponseEntity<List<ActivityLogResponse>> listAll(HttpServletRequest request) {
         Long vendorId = (Long) request.getAttribute("vendorId");
 

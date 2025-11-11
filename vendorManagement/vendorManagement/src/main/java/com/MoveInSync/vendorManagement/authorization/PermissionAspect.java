@@ -23,6 +23,7 @@ public class PermissionAspect {
 
     @Before("@annotation(requiresPermission)")
     public void checkPermission(JoinPoint joinPoint, RequiresPermission requiresPermission) {
+        System.out.println("Permission check");
         ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null) {
             throw new AccessDeniedException("No request context available");
@@ -42,5 +43,6 @@ public class PermissionAspect {
         if (permissions == null || !permissions.contains(required)) {
             throw new AccessDeniedException("You do not have permission: " + required);
         }
+        System.out.println("Permission check passed");
     }
 }

@@ -5,6 +5,7 @@ import com.MoveInSync.vendorManagement.entity.Driver;
 import com.MoveInSync.vendorManagement.entity.Vehicle;
 import com.MoveInSync.vendorManagement.entity.Vendor;
 import com.MoveInSync.vendorManagement.repository.DriverRepository;
+import com.MoveInSync.vendorManagement.repository.UserRepository;
 import com.MoveInSync.vendorManagement.repository.VehicleRepository;
 import com.MoveInSync.vendorManagement.repository.VendorRepository;
 import com.MoveInSync.vendorManagement.service.interfaces.HierarchyService;
@@ -22,6 +23,7 @@ public class HierarchyServiceImpl implements HierarchyService {
     private final VendorRepository vendorRepository;
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
+    private final UserRepository userRepository;
 
     @Override
     public HierarchyNode getVendorHierarchy(Long vendorId) {
@@ -31,6 +33,16 @@ public class HierarchyServiceImpl implements HierarchyService {
     }
 
     private HierarchyNode buildHierarchyNode(Vendor vendor) {
+        List<UserInfo> users = userRepository.findByVendor(vendor)
+                .stream()
+                .map(u -> new UserInfo(
+                        u.getUserId(),
+                        u.getEmail(),
+                        vendor.getRole() != null ? vendor.getRole().getName() : "N/A",
+                        u.getStatus().name()
+                ))
+                .collect(Collectors.toList());
+
         List<DriverInfo> drivers = driverRepository.findByVendor(vendor)
                 .stream()
                 .map(d -> new DriverInfo(d.getDriverId(), d.getName(), d.getStatus().name()))
@@ -50,6 +62,7 @@ public class HierarchyServiceImpl implements HierarchyService {
                 vendor.getVendorId(),
                 vendor.getName(),
                 vendor.getStatus().name(),
+                users,
                 drivers,
                 vehicles,
                 children
