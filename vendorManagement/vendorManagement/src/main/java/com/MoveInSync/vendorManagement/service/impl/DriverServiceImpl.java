@@ -3,8 +3,10 @@ package com.MoveInSync.vendorManagement.service.impl;
 import com.MoveInSync.vendorManagement.dto.DriverRequestDto;
 import com.MoveInSync.vendorManagement.dto.DriverResponseDto;
 import com.MoveInSync.vendorManagement.entity.Driver;
+import com.MoveInSync.vendorManagement.entity.Vehicle;
 import com.MoveInSync.vendorManagement.entity.Vendor;
 import com.MoveInSync.vendorManagement.repository.DriverRepository;
+import com.MoveInSync.vendorManagement.repository.VehicleRepository;
 import com.MoveInSync.vendorManagement.repository.VendorRepository;
 import com.MoveInSync.vendorManagement.service.interfaces.DriverService;
 import com.MoveInSync.vendorManagement.util.VendorHierarchyHelper;
@@ -25,12 +27,13 @@ public class DriverServiceImpl implements DriverService {
     private final VendorRepository vendorRepository;
     private final VendorHierarchyHelper hierarchyHelper;
     private final ActivityLogService activityLogService;
-
+    private final VehicleRepository vehicleRepository;
     @Override
     public DriverResponseDto addDriver(Long vendorId, DriverRequestDto request) {
         Vendor actingVendor = vendorRepository.findById(vendorId)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
 
+        // 🧩 Identify target vendor (self or child)
         Vendor targetVendor;
         if (request.getTargetVendorId() != null) {
             targetVendor = vendorRepository.findById(request.getTargetVendorId())
@@ -44,19 +47,48 @@ public class DriverServiceImpl implements DriverService {
             targetVendor = actingVendor; // default self
         }
 
+        // 🧩 Create new driver
         Driver driver = new Driver();
         driver.setName(request.getName());
         driver.setPhone(request.getPhone());
         driver.setLicenseNo(request.getLicenseNo());
-        // assignedVehicle stored as entity in Driver; here we keep string in response only
         driver.setStatus(com.MoveInSync.vendorManagement.enumClass.DriverStatus.ACTIVE);
         driver.setCreatedAt(LocalDateTime.now());
         driver.setVendor(targetVendor);
 
-        driverRepository.save(driver);
-        return mapToResponse(driver, request.getAssignedVehicle());
-    }
+        // ✅ Assign vehicle if provided
+        if (request.getAssignedVehicle() != null && !request.getAssignedVehicle().isBlank()) {
+            try {
+                Vehicle vehicle;
 
+                // If request contains a numeric vehicle ID
+                if (request.getAssignedVehicle().matches("\\d+")) {
+                    Long vehicleId = Long.parseLong(request.getAssignedVehicle());
+                    vehicle = vehicleRepository.findById(vehicleId)
+                            .orElseThrow(() -> new RuntimeException("Vehicle not found with ID: " + vehicleId));
+                }
+                // Otherwise, search by registration number or name
+                else {
+                    vehicle = vehicleRepository.findByRegistrationNo(request.getAssignedVehicle())
+                            .orElseThrow(() -> new RuntimeException("Vehicle not found with registration: " + request.getAssignedVehicle()));
+                }
+
+                // 🧩 Access check: same vendor or ancestor allowed
+                if (!vehicle.getVendor().getVendorId().equals(targetVendor.getVendorId()) &&
+                        !hierarchyHelper.isAncestor(targetVendor, vehicle.getVendor())) {
+                    throw new RuntimeException("Access denied — cannot assign vehicle from unrelated vendor!");
+                }
+
+                driver.setAssignedVehicle(vehicle);
+            } catch (Exception e) {
+                throw new RuntimeException("Vehicle assignment failed: " + e.getMessage());
+            }
+        }
+
+        driverRepository.save(driver);
+        return mapToResponse(driver,
+                driver.getAssignedVehicle() != null ? driver.getAssignedVehicle().getRegistrationNo() : null);
+    }
     @Override
     public List<DriverResponseDto> listDrivers(Long vendorId) {
         Vendor actingVendor = vendorRepository.findById(vendorId)
