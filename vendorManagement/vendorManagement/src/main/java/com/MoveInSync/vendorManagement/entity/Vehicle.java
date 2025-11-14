@@ -26,7 +26,7 @@ public class Vehicle {
     private String type; // e.g., Sedan, SUV, Truck
     private String status = "active"; // active, maintenance, blocked
     private LocalDateTime createdAt = LocalDateTime.now();
-
+    private boolean isAssigned = false;
     @OneToMany(mappedBy = "vehicle")
     private List<Document> documents;
 }

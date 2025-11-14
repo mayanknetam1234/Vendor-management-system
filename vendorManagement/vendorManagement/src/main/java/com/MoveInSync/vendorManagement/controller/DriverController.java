@@ -33,7 +33,7 @@ public class DriverController {
 
     // ✅ 2️⃣ Get all drivers under current vendor
     @GetMapping("/list")
-    @RequiresPermission("CAN_VIEW_VENDOR")
+    @RequiresPermission("CAN_VIEW_DRIVER")
     public ResponseEntity<java.util.List<DriverResponseDto>> listDrivers(HttpServletRequest request) {
         Long vendorId = (Long) request.getAttribute("vendorId");
         return ResponseEntity.ok(driverService.listDrivers(vendorId));
@@ -41,7 +41,7 @@ public class DriverController {
 
     // ✅ 3️⃣ Fetch driver details
     @GetMapping("/{id}")
-    @RequiresPermission("CAN_VIEW_VENDOR")
+    @RequiresPermission("CAN_VIEW_DRIVER")
     public ResponseEntity<DriverResponseDto> getDriver(HttpServletRequest request, @PathVariable Long id) {
         Long vendorId = (Long) request.getAttribute("vendorId");
         return ResponseEntity.ok(driverService.getDriver(vendorId, id));
@@ -77,7 +77,7 @@ public class DriverController {
     }
 
     @GetMapping("/tree")
-    @RequiresPermission("CAN_VIEW_VENDOR")
+    @RequiresPermission("CAN_VIEW_DRIVER")
     public ResponseEntity<List<DriverResponseDto>> listAllDriversInTree(HttpServletRequest request) {
         Long vendorId = (Long) request.getAttribute("vendorId");
         return ResponseEntity.ok(driverService.listAllDriversInTree(vendorId));

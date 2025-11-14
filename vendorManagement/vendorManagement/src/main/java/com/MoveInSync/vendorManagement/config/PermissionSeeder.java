@@ -25,7 +25,9 @@ public class PermissionSeeder implements CommandLineRunner {
                 "CAN_UPLOAD_DOC",
                 "CAN_VERIFY_DOC",
                 "CAN_MANAGE_PERMISSIONS",
-                "CAN_VIEW_VENDOR"
+                "CAN_VIEW_VENDOR",
+                "CAN_VIEW_PERMISSIONS",
+                "CAN_VIEW_ROLES"
         );
         for (String p : perms) {
             // Avoid duplicate entries if already present

@@ -14,6 +14,7 @@ import java.util.List;
 @RequestMapping("/api/permissions")
 @RequiredArgsConstructor
 @CrossOrigin
+
 public class PermissionController {
 
     private final PermissionService permissionService;
@@ -28,7 +29,7 @@ public class PermissionController {
 
     // ✅ 2️⃣ Get all permissions
     @GetMapping("/list")
-    @RequiresPermission("CAN_VIEW_VENDOR")
+    @RequiresPermission("CAN_VIEW_PERMISSION")
     public ResponseEntity<List<Permission>> getAllPermissions() {
         return ResponseEntity.ok(permissionService.getAllPermissions());
     }

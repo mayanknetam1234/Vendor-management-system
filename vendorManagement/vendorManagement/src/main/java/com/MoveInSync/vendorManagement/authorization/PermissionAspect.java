@@ -2,7 +2,6 @@ package com.MoveInSync.vendorManagement.authorization;
 
 import com.MoveInSync.vendorManagement.dto.ErrorResponseDto;
 import com.MoveInSync.vendorManagement.security.JwtService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,14 +9,13 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Aspect
 @Component
@@ -27,64 +25,58 @@ public class PermissionAspect {
     private JwtService jwtService;
 
     @Before("@annotation(requiresPermission)")
-    public void checkPermission(JoinPoint joinPoint, RequiresPermission requiresPermission) {
+    public void checkPermission(JoinPoint joinPoint, RequiresPermission requiresPermission) throws Throwable {
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return; // no web context
+
+        HttpServletRequest request = attrs.getRequest();
+        HttpServletResponse response = attrs.getResponse();
+
         try {
-            System.out.println("Permission check");
-
-            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attrs == null) {
-                throw new AccessDeniedException("No request context available");
-            }
-
-            HttpServletRequest request = attrs.getRequest();
-            HttpServletResponse response = attrs.getResponse(); // ✅ Get response to write JSON
-
             String authHeader = request.getHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                sendErrorResponse(response, "Missing or invalid Authorization header");
-                throw new AccessDeniedException("Missing or invalid Authorization header");
+                sendJsonResponse(response, "Missing or invalid Authorization header", HttpServletResponse.SC_FORBIDDEN);
+                // ⛔️ Stop controller execution
+                throw new StopExecutionException();
             }
 
             String token = authHeader.substring(7);
             Claims claims = jwtService.extractAllClaims(token);
-
             List<String> permissions = (List<String>) claims.get("permissions");
             String required = requiresPermission.value();
 
             if (permissions == null || !permissions.contains(required)) {
-                sendErrorResponse(response, "You do not have permission: " + required);
-                throw new AccessDeniedException("You do not have permission: " + required);
+                sendJsonResponse(response, "Access Denied: You do not have permission → " + required, HttpServletResponse.SC_FORBIDDEN);
+                // ⛔️ Stop controller execution
+                throw new StopExecutionException();
             }
 
-            System.out.println("Permission check passed");
+            System.out.println("✅ Permission check passed: " + required);
 
-        } catch (AccessDeniedException ex) {
-            throw ex; // handled by sendErrorResponse() already
+        } catch (StopExecutionException stop) {
+            // absorb — prevents controller from executing
+            throw stop;
         } catch (Exception e) {
-            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attrs != null) {
-                sendErrorResponse(attrs.getResponse(), "Unexpected error during permission check: " + e.getMessage());
-            }
-            throw new AccessDeniedException("Unexpected permission error");
+            sendJsonResponse(response, "Unexpected error during permission check: " + e.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            throw new StopExecutionException();
         }
     }
 
-    private void sendErrorResponse(HttpServletResponse response, String message) {
+    private void sendJsonResponse(HttpServletResponse response, String message, int status) {
+        if (response == null) return;
         try {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setStatus(status);
             response.setContentType("application/json");
-
             ErrorResponseDto error = new ErrorResponseDto(
                     message,
-                    HttpServletResponse.SC_FORBIDDEN,
-                    java.time.LocalDateTime.now().toString()
+                    status,
+                    LocalDateTime.now().toString()
             );
-
-            String json = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(error);
-            response.getWriter().write(json);
-            response.getWriter().flush();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            new com.fasterxml.jackson.databind.ObjectMapper()
+                    .writeValue(response.getWriter(), error);
+        } catch (IOException ignored) {}
     }
+
+    // 🧩 Custom runtime exception to STOP execution silently
+    static class StopExecutionException extends RuntimeException {}
 }

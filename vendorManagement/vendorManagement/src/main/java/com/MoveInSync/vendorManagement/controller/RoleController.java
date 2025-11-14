@@ -30,7 +30,7 @@ public class RoleController {
 
     // ✅ 2️⃣ Get all roles
     @GetMapping("/list")
-//    @RequiresPermission("CAN_VIEW_VENDOR")//
+    @RequiresPermission("CAN_VIEW_ROLES")//
     public ResponseEntity<List<RoleResponseDto>> getAllRoles() {
         List<RoleResponseDto> roles = roleService.getAllRoles().stream()
                 .map(this::mapToResponse)

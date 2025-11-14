@@ -32,9 +32,10 @@ public class DocumentController {
     }
 
     // ✅ Download document
+    ///
     @GetMapping("/download/{id}")
     @RequiresPermission("CAN_VIEW_VENDOR")
-    public ResponseEntity<byte[]> download(HttpServletRequest request, @PathVariable Long id) throws IOException {
+    public ResponseEntity<byte[]> download(HttpServletRequest request, @PathVariable Long id,@RequestParam Boolean status) throws IOException {
         Long vendorId = (Long) request.getAttribute("vendorId");
         byte[] data = documentService.download(vendorId, id);
         return ResponseEntity.ok()
